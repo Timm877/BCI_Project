@@ -52,6 +52,7 @@ def abs_handler(address: str,*args):
         if (len(args)==2): #If OSC Stream Brainwaves = Average Onle
             abs_waves[wave] = args[1] #Single value for all sensors, already filtered for good data
         if (len(args)==5): #If OSC Stream Brainwaves = All Values (all 4 sensors)
+            print('we do some averaging jo')
             sumVals=0
             countVals=0            
             for i in [0,1,2,3]:
