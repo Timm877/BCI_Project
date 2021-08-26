@@ -1,0 +1,17 @@
+gensim
+inspyred
+joblib
+matplotlib
+nltk
+numpy
+pandas
+pyclust
+pykalman
+scikit-learn
+scipy
+sklearn
+statsmodels
+treelib
+Unidecode
+git+https://github.com/RJT1990/pyflux
+git+https://github.com/pybrain/pybrain

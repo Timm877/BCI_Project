@@ -12,6 +12,8 @@ build/
 develop-eggs/
 dist/
 downloads/
+figures/
+intermediate_datafiles/
 eggs/
 .eggs/
 lib/
