@@ -1,0 +1,1 @@
+Repository for a DIY BCI project, where I try to use motor imagery captured by the Muse 2 EEG device, in order to play a game.
