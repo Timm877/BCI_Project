@@ -10,8 +10,8 @@ from pathlib import Path
 import argparse
 
 # Set up file names and locations.
-FOLDER_PATH = Path('./intermediate_datafiles/mental_states/step1_result')
-RESULT_PATH = Path('./intermediate_datafiles/mental_states/step2_result')
+FOLDER_PATH = Path('./intermediate_datafiles/motor_imagery/step1_result')
+RESULT_PATH = Path('./intermediate_datafiles/motor_imagery/step2_result')
 
 def print_flags():
     """
@@ -20,7 +20,7 @@ def print_flags():
     for key, value in vars(FLAGS).items():
         print(key + ' : ' + str(value))
 
-def main(): #TODO fix that step1 and 2 datasets are in different folders
+def main():
     print_flags()
 
     # We'll create an instance of our visualization class to plot results.
@@ -30,10 +30,10 @@ def main(): #TODO fix that step1 and 2 datasets are in different folders
     OutlierDistr = DistributionBasedOutlierDetection()
     OutlierDist = DistanceBasedOutlierDetection()
 
-    # all methods except final are for experimentation
+    # all methods, except 'final', are for experimentation
     # for those, we choose random features for the expertiments to inspect
     outlier_columns = ['Delta_TP9', 'Beta_AF7']
-    example_filename = "./intermediate_datafiles/mental_states/step1_result/Neutral/Neutral_2021-07-06--17-26-04_3567260142020984011.csv"
+    example_filename = "./intermediate_datafiles/motor_imagery/step1_result/med_2021-08-26--21-03-58_7419762883904244960.csv"
     example_dataset = pd.read_csv(example_filename, index_col=0)
     example_dataset.index = pd.to_datetime(example_dataset.index)
 
@@ -48,8 +48,8 @@ def main(): #TODO fix that step1 and 2 datasets are in different folders
         for col in outlier_columns:
             print(f"Applying mixture model for column {col} with n component {FLAGS.n}")
             example_dataset = OutlierDistr.mixture_model(example_dataset, col, FLAGS.n)
-            print('Number of outliers for points with prob < 4-e-5 for feature ' + col + ': ' + str(example_dataset[col+'_mixture'][example_dataset[col+'_mixture'] < 0.0005].count()))
-            DataViz.plot_dataset(example_dataset, [col, col + '_mixture'], ['exact', 'exact'], ['line', 'points'], algo='mixture')
+            print('Number of outliers for points with prob < 5e-5 for feature ' + col + ': ' + str(example_dataset[col+'_mixture'][example_dataset[col+'_mixture'] < 0.0005].count()))
+            DataViz.plot_dataset(example_dataset, [col, col + '_mixture'], ['exact', 'exact'], ['line', 'points'], algo='mixture', filename='2021-08-26--18-45-49')
 
     elif FLAGS.mode == 'distance':
         for col in outlier_columns:
@@ -74,50 +74,59 @@ def main(): #TODO fix that step1 and 2 datasets are in different folders
                 print('Skipping.')
           
     elif FLAGS.mode == 'final': #in final, we run the pipeline for all files
-        for condition in os.scandir(FOLDER_PATH): # go through all conditions for experiments    
-            if condition.is_dir():
-                condition_path = condition.path
-                result_condition_path = Path(str(RESULT_PATH) +'/' +  condition.name)
-                result_condition_path.mkdir(exist_ok=True, parents=True)
+        RESULT_PATH.mkdir(exist_ok=True, parents=True)
 
-                for instance in os.scandir(condition_path): #instance = 1 individual experiment
-                    instance_path = instance.path
-                    print(f'Going through pipeline for file {instance_path}.')
-                    dataset = pd.read_csv(instance_path, index_col=0)
-                    dataset.index = pd.to_datetime(dataset.index)
-                    for col in [c for c in dataset.columns if not 'left' in c or 'right' in c]: 
-                        print(f'Measurement is now: {col}')
-                        print('Step 1: Outlier detection')
+        for instance in os.scandir(FOLDER_PATH): # go through all instances of experiments  
+            instance_path = instance.path
+            print(f'Going through pipeline for file {instance_path}.')
+            dataset = pd.read_csv(instance_path, index_col=0)
+            dataset.index = pd.to_datetime(dataset.index)
 
-                        # we use mixture model as it is used in one paper with n=3. Number of outliers is very low 
-                        # but measurements are short so this is explainable, also we use brain wave data now
-                        # in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7728142/pdf/sensors-20-06730.pdf
-                        # they actually check sort of manually what data is noisy and discard that
+            for col in [c for c in dataset.columns if not 'label' in c]: 
+                print(f'Measurement is now: {col}')
+                #print('Step 1: Outlier detection')
 
-                        dataset = OutlierDistr.mixture_model(dataset, col, FLAGS.n)
-                        print('Number of outliers for points with prob < 4-e-5 for feature ' + col + ': ' + str(dataset[col+'_mixture'][dataset[col+'_mixture'] < 0.0005].count()))
-                        dataset.loc[dataset[f'{col}_mixture'] < 0.0005, col] = np.nan
-                        del dataset[col + '_mixture']
+                # we use mixture model as it is used in one paper with n=3. Number of outliers is very low 
+                # but measurements are short so this is explainable, also we use brain wave data now
+                # in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7728142/pdf/sensors-20-06730.pdf
+                # they actually check sort of manually what data is noisy and discard that
+                # I did that as well, by looking at the figure I made in step 1 for creating the dataset
 
-                        print('Step 2: Imputation')
-                        dataset[col] = dataset[col].interpolate() #interpolatie missing values
-                        dataset[col] = dataset[col].fillna(method='bfill') # And fill the initial data points if needed
-                        # check if all nan are filled in
-                        print('Check, number of nans left should be 0: ' + str(dataset[col].isna().sum()))
-                        
-                        # Step 3: lowpass filtering of periodic measurements. As all our features are brain waves and thus periodic, 
-                        # we do this for all features expect the labels
-                        # Note that the brain wave values are already filtered as per https://mind-monitor.com/Technical_Manual.php#help_graph_absolute
-                        # but if I later want to work with Raw EEG data, filtering is abosutely necessary
-                        # I would NOT use a High pass filter (https://sapienlabs.org/pitfalls-of-filtering-the-eeg-signal/)
-                        # which IS currently used by the mind monitor / muse app as the delta freqs are 1-4Hz
-                        # dataset = Filters.low_pass_filter(dataset, col, fs, cutoff, order=10)
-                        # dataset[col] = dataset[col + '_lowpass']
-                        # del dataset[col + '_lowpass']
-                    
-                    # Step 4: save the file
-                    print(dataset.head())
-                    dataset.to_csv(Path(str(result_condition_path) + '/' + instance.name))
+                dataset = OutlierDistr.mixture_model(dataset, col, FLAGS.n)
+                #print('Number of outliers for points with prob < 5e-5 for feature ' + col + ': ' + str(dataset[col+'_mixture'][dataset[col+'_mixture'] < 0.0005].count()))
+                
+                dataset.loc[dataset[f'{col}_mixture'] < 0.0005, col] = np.nan
+                del dataset[col + '_mixture']
+
+                #print('Step 2: Imputation')
+                #print('Before interpolation, number of nans left should be > 0: ' + str(dataset[col].isna().sum()))
+                #print('Also count amount of zeroes:' + str((dataset[col] == 0).sum()))
+
+                dataset[col] = dataset[col].interpolate() #interpolating missing values
+                dataset[col] = dataset[col].fillna(method='bfill') # And fill the initial data points if needed
+
+                # check if all nan are filled in
+                print('Check, number of nans left should be 0: ' + str(dataset[col].isna().sum()))
+
+
+
+
+                # Step 3: lowpass filtering of periodic measurements. As all our features are brain waves and thus periodic, 
+                # we do this for all features expect the labels
+                # Note that the brain wave values are already filtered as per https://mind-monitor.com/Technical_Manual.php#help_graph_absolute
+                # but if I later want to work with Raw EEG data, filtering is abosutely necessary
+                # I would NOT use a High pass filter (https://sapienlabs.org/pitfalls-of-filtering-the-eeg-signal/)
+                # which IS currently used by the mind monitor / muse app as the delta freqs are 1-4Hz
+                # dataset = Filters.low_pass_filter(dataset, col, fs, cutoff, order=10)
+                # dataset[col] = dataset[col + '_lowpass']
+                # del dataset[col + '_lowpass']
+                
+            DataViz.plot_dataset(dataset, ['Gamma_','Beta_', 'Alpha_', 'Theta_', 'Delta_', 'label_'],
+                    ['like', 'like', 'like', 'like', 'like', 'like'],
+                    ['line', 'line', 'line', 'line', 'line', 'line'], instance.name.split('_')[1])
+            # Step 4: save the file
+            #print(dataset.head())
+            dataset.to_csv(Path(str(RESULT_PATH) + '/' + instance.name))
 
 if __name__ == '__main__':
     # Command line arguments

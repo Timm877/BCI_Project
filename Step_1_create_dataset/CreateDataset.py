@@ -30,20 +30,21 @@ class CreateDataset:
         right = []
         label = 0
         for i in range(0, len(dataset.index)):
-            if dataset.loc[i, 'Elements'].isna() == False:
-                if dataset.loc[i, 'Elements'].startwith('/Marker/'):
-                    label = int(dataset.loc[i, 'Elements'][-1]) #marker is either 1 (for left) or 2 (for two)
+            if type(dataset.loc[i, 'Elements']) == str: 
+                #if a value in elements is a string, we have a marker line OR a eye blink line (no event gives nan)
+                if dataset.loc[i, 'Elements'].startswith('/Marker/'): #only when it is a marker line, we change label, else pass
+                    label = int(dataset.loc[i, 'Elements'][-1]) #marker is 1 (for left) or 2 (for right) or 3 (relaxing)
             if label == 1: #keep adding 1 to left if label stays 1
                 left.append(1)
                 right.append(0)
-            elif label == 2: #add right when label is 2
+            elif label == 2: #add right when label is 2 / stays 2
                 left.append(0)
                 right.append(1)
             else:
                 left.append(0)
                 right.append(0)
-        dataset['left'] = left
-        dataset['right'] = right
+        dataset['label_left'] = left
+        dataset['label_right'] = right
         return dataset
 
     def create_dataset(self, start_time, end_time, cols):
@@ -77,7 +78,8 @@ class CreateDataset:
             for col in label_cols:
                 # We put 1 when most value of the labels in relevant rows are 1, else 0
                 if len(relevant_rows) > 0:
-                    data_table.loc[data_table.index[i], str(col)] = stats.mode(relevant_rows[col])
+                    #stats.mode prints out mode as well as counts
+                    data_table.loc[data_table.index[i], str(col)] = stats.mode(relevant_rows[col])[0] # so only select the mode, not counts
                 else:
                     data_table.loc[data_table.index[i], str(col)] = np.nan 
         return data_table
@@ -87,13 +89,14 @@ class CreateDataset:
         dataset = pd.read_csv(file, skipinitialspace=True)
 
         dataset['TimeStamp'] = pd.to_datetime(dataset['TimeStamp'])
-        # dataset = self.add_left_right(dataset) # add features for left and right motor imagery labels
+        dataset = self.add_left_right(dataset) # add features for left and right motor imagery labels
         dataset.dropna(thresh=dataset.shape[1]-10,axis=0, inplace=True) #delete the rows of logs of markers (rows with > col-10 nans)
 
         # now we initialize the sampled dataset with our granularity
-        all_columns = value_cols #TODO + label_cols
+        all_columns = value_cols + label_cols
 
         data_table = self.create_dataset(min(dataset['TimeStamp']), max(dataset['TimeStamp']), all_columns) #this creates a df named data_table 
-        data_table = self.num_sampling(dataset, data_table, value_cols)
-        #data_table = self.cat_sampling(dataset, data_table, label_cols, relevant_rows
+
+        data_table = self.num_sampling(dataset, data_table, value_cols) #add numerical data
+        data_table = self.cat_sampling(dataset, data_table, label_cols) # add label data
         return data_table

@@ -387,7 +387,7 @@ class VisualizeDataset:
 
     # Visualizes the performance of different algorithms over different feature sets. Assumes the scores to contain
     # a score on the training set followed by an sd, and the same for the test set.
-    def plot_performances(self, algs, feature_subset_names, scores_over_all_algs, ylim, std_mult, y_name):
+    def plot_performances(self, algs, feature_subset_names, scores_over_all_algs, ylim, std_mult, y_name, graph_type = 'performance', filename='all'):
 
         width = float(1)/(len(feature_subset_names)+1)
         ind = np.arange(len(algs))
@@ -395,19 +395,19 @@ class VisualizeDataset:
             means = []
             std = []
             for j in range(0, len(algs)):
-                means.append(scores_over_all_algs[i][j][2])
-                std.append(std_mult * scores_over_all_algs[i][j][3])
+                means.append(scores_over_all_algs[i][j][2]) # only plot validation results
+                std.append(std_mult * scores_over_all_algs[i][j][3]) #with their std
             plt.errorbar(ind + i * width, means, yerr=std, fmt=self.colors[i%len(self.colors)] + 'o', markersize='3')
         plt.ylabel(y_name)
         plt.xticks(ind+(float(len(feature_subset_names))/2)*width, algs)
         plt.legend(feature_subset_names, loc=4, numpoints=1)
         if not ylim is None:
             plt.ylim(ylim)
-        self.save(plt)
+        self.save(plt, graph_type, filename)
         plt.show()
 
     def plot_performances_classification(self, algs, feature_subset_names, scores_over_all_algs):
-        self.plot_performances(algs, feature_subset_names, scores_over_all_algs, [0.70, 1.0], 2, 'Accuracy')
+        self.plot_performances(algs, feature_subset_names, scores_over_all_algs, [0.50, 1.0], 2, 'Accuracy', graph_type = 'performance', filename='all')
 
     def plot_performances_regression(self, algs, feature_subset_names, scores_over_all_algs):
         self.plot_performances(algs, feature_subset_names, scores_over_all_algs, None, 1, 'Mean Squared Error')
