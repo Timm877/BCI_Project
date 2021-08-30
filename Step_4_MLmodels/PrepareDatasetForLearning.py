@@ -146,7 +146,7 @@ class PrepareDatasetForLearning:
                 training_set_y = self.update_set(training_set_y, training_set_y_person)
 
                 val_set_X = self.update_set(val_set_X, val_set_X_person)
-                val_set_y = self.update_set(val_set_X, val_set_y_person)
+                val_set_y = self.update_set(val_set_y, val_set_y_person)
 
                 test_set_X = self.update_set(test_set_X, test_set_X_person)
                 test_set_y = self.update_set(test_set_y, test_set_y_person)

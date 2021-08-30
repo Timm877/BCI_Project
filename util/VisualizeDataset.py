@@ -407,7 +407,4 @@ class VisualizeDataset:
         plt.show()
 
     def plot_performances_classification(self, algs, feature_subset_names, scores_over_all_algs):
-        self.plot_performances(algs, feature_subset_names, scores_over_all_algs, [0.50, 1.0], 2, 'Accuracy', graph_type = 'performance', filename='all')
-
-    def plot_performances_regression(self, algs, feature_subset_names, scores_over_all_algs):
-        self.plot_performances(algs, feature_subset_names, scores_over_all_algs, None, 1, 'Mean Squared Error')
+        self.plot_performances(algs, feature_subset_names, scores_over_all_algs, [0.40, 1.0], 2, 'F1 score', graph_type = 'performance', filename='all')

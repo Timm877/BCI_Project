@@ -23,7 +23,7 @@ class ClassificationEvaluation:
     # Returns the f1 given the true and predicted values.
     # Note that it returns the recall per class.
     def f1(self, y_true, y_pred):
-        return metrics.f1_score(y_true, y_pred, average=None)
+        return metrics.f1_score(y_true, y_pred, average='macro')
 
     # Returns the area under the curve given the true and predicted values.
     # Note: we expect a binary classification problem here(!)

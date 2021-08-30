@@ -11,6 +11,8 @@ from sklearn.model_selection import GridSearchCV
 import pandas as pd
 import numpy as np
 import os
+import pickle
+import inspect
 
 class ClassificationAlgorithms:
 
@@ -18,7 +20,7 @@ class ClassificationAlgorithms:
     # hidden layers and number of iterations), and use the created network to predict the outcome for both the
     # test and validation set. It returns the categorical predictions for the training and validation set as well as the
     # probabilities associated with each class, each class being represented as a column in the data frame.
-    def feedforward_neural_network(self, train_X, train_y, test_X, hidden_layer_sizes=(100,), max_iter=500, activation='logistic', alpha=0.0001, learning_rate='adaptive', gridsearch=True, print_model_details=False):
+    def feedforward_neural_network(self, train_X, train_y, test_X, save_model=False, hidden_layer_sizes=(100,), max_iter=500, activation='logistic', alpha=0.0001, learning_rate='adaptive', gridsearch=True, print_model_details=False):
         if gridsearch:
             # With the current parameters for max_iter and Python 3 packages convergence is not always reached, therefore increased +1000.
             tuned_parameters = [{'hidden_layer_sizes': [(5,), (10,), (25,), (100,), (100,5,), (100,10,),], 'activation': [activation],
@@ -44,10 +46,14 @@ class ClassificationAlgorithms:
         pred_test_y = nn.predict(test_X)
         frame_prob_training_y = pd.DataFrame(pred_prob_training_y, columns=nn.classes_)
         frame_prob_test_y = pd.DataFrame(pred_prob_test_y, columns=nn.classes_)
+        if save_model:
+            # save the model to disk
+            filename = 'final_' + str(inspect.stack()[0][3]) + '_model_BCI.sav'
+            pickle.dump(nn, open(filename, 'wb'))
 
         return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
 
-    def LDA(self, train_X, train_y, test_X, gridsearch=True, print_model_details=False):
+    def LDA(self, train_X, train_y, test_X, gridsearch=True, print_model_details=False, save_model=False):
         # Create the model
         lda = LinearDiscriminantAnalysis()
 
@@ -62,13 +68,18 @@ class ClassificationAlgorithms:
         frame_prob_training_y = pd.DataFrame(pred_prob_training_y, columns=lda.classes_)
         frame_prob_test_y = pd.DataFrame(pred_prob_test_y, columns=lda.classes_)
 
+        if save_model:
+            # save the model to disk
+            filename = 'final_' + str(inspect.stack()[0][3]) + '_model_BCI.sav'
+            pickle.dump(lda, open(filename, 'wb'))
+
         return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
 
     # Apply a support vector machine for classification upon the training data (with the specified value for
     # C, epsilon and the kernel function), and use the created model to predict the outcome for both the
     # training and validation set. It returns the categorical predictions for the training and validation set as well as the
     # probabilities associated with each class, each class being represented as a column in the data frame.
-    def support_vector_machine_with_kernel(self, train_X, train_y, test_X, C=1,  kernel='rbf', gamma=1e-3, gridsearch=True, print_model_details=False):
+    def support_vector_machine_with_kernel(self, train_X, train_y, test_X, C=1, save_model=False, kernel='rbf', gamma=1e-3, gridsearch=True, print_model_details=False):
         # Create the model
         if gridsearch:
             tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
@@ -94,13 +105,18 @@ class ClassificationAlgorithms:
         frame_prob_training_y = pd.DataFrame(pred_prob_training_y, columns=svm.classes_)
         frame_prob_test_y = pd.DataFrame(pred_prob_test_y, columns=svm.classes_)
 
+        if save_model:
+            # save the model to disk
+            filename = 'final_' + str(inspect.stack()[0][3]) + '_model_BCI.sav'
+            pickle.dump(svm, open(filename, 'wb'))
+
         return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
 
     # Apply a support vector machine for classification upon the training data (with the specified value for
     # C, epsilon and the kernel function), and use the created model to predict the outcome for both the
     # training and validation set. It returns the categorical predictions for the training and validation set set as well as the
     # probabilities associated with each class, each class being represented as a column in the data frame.
-    def support_vector_machine_without_kernel(self, train_X, train_y, test_X, C=1, tol=1e-3, max_iter=1000, gridsearch=True, print_model_details=False):
+    def support_vector_machine_without_kernel(self, train_X, train_y, test_X, save_model=False, C=1, tol=1e-3, max_iter=1000, gridsearch=True, print_model_details=False):
         # Create the model
         if gridsearch:
             tuned_parameters = [{'max_iter': [1000, 2000], 'tol': [1e-3, 1e-4],
@@ -127,6 +143,10 @@ class ClassificationAlgorithms:
         pred_test_y = svm.predict(test_X)
         frame_prob_training_y = pd.DataFrame(pred_prob_training_y, columns=svm.classes_)
         frame_prob_test_y = pd.DataFrame(pred_prob_test_y, columns=svm.classes_)
+        if save_model:
+            # save the model to disk
+            filename = 'final_' + str(inspect.stack()[0][3]) + '_model_BCI.sav'
+            pickle.dump(svm, open(filename, 'wb'))
 
         return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
 
@@ -134,7 +154,7 @@ class ClassificationAlgorithms:
     # k), and use the created model to predict the outcome for both the
     # training and validation set. It returns the categorical predictions for the training and validation set as well as the
     # probabilities associated with each class, each class being represented as a column in the data frame.
-    def k_nearest_neighbor(self, train_X, train_y, test_X, n_neighbors=5, gridsearch=True, print_model_details=False):
+    def k_nearest_neighbor(self, train_X, train_y, test_X, n_neighbors=5, gridsearch=True, print_model_details=False, save_model = False):
         # Create the model
         if gridsearch:
             tuned_parameters = [{'n_neighbors': [1, 2, 5, 10]}]
@@ -158,6 +178,10 @@ class ClassificationAlgorithms:
         pred_test_y = knn.predict(test_X)
         frame_prob_training_y = pd.DataFrame(pred_prob_training_y, columns=knn.classes_)
         frame_prob_test_y = pd.DataFrame(pred_prob_test_y, columns=knn.classes_)
+        if save_model:
+            # save the model to disk
+            filename = 'final_' + str(inspect.stack()[0][3]) + '_model_BCI.sav'
+            pickle.dump(knn, open(filename, 'wb'))
 
         return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
 
@@ -166,7 +190,7 @@ class ClassificationAlgorithms:
     # and use the created model to predict the outcome for both the
     # test and training set. It returns the categorical predictions for the training and test set as well as the
     # probabilities associated with each class, each class being represented as a column in the data frame.
-    def decision_tree(self, train_X, train_y, test_X, min_samples_leaf=50, criterion='gini', print_model_details=False, export_tree_path='./figures/crowdsignals_ch7_classification/', export_tree_name='tree.dot', gridsearch=True):
+    def decision_tree(self, train_X, train_y, test_X, min_samples_leaf=50, save_model=False, criterion='gini', print_model_details=False, export_tree_path='./figures/crowdsignals_ch7_classification/', export_tree_name='tree.dot', gridsearch=True):
         # Create the model
         if gridsearch:
             tuned_parameters = [{'min_samples_leaf': [2, 10, 50, 100, 200],
@@ -202,6 +226,10 @@ class ClassificationAlgorithms:
             if not (os.path.exists(export_tree_path)):
                 os.makedirs(str(export_tree_path))
             tree.export_graphviz(dtree, out_file=str(export_tree_path) + '/' + export_tree_name, feature_names=train_X.columns, class_names=dtree.classes_)
+        if save_model:
+            # save the model to disk
+            filename = 'final_' + str(inspect.stack()[0][3]) + '_model_BCI.sav'
+            pickle.dump(dtree, open(filename, 'wb'))
 
         return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
 
@@ -209,7 +237,7 @@ class ClassificationAlgorithms:
     # and use the created model to predict the outcome for both the
     # test and training set. It returns the categorical predictions for the training and test set as well as the
     # probabilities associated with each class, each class being represented as a column in the data frame.
-    def naive_bayes(self, train_X, train_y, test_X):
+    def naive_bayes(self, train_X, train_y, test_X, save_model=False):
         # Create the model
         nb = GaussianNB()
         
@@ -224,6 +252,10 @@ class ClassificationAlgorithms:
         pred_test_y = nb.predict(test_X)
         frame_prob_training_y = pd.DataFrame(pred_prob_training_y, columns=nb.classes_)
         frame_prob_test_y = pd.DataFrame(pred_prob_test_y, columns=nb.classes_)
+        if save_model:
+            # save the model to disk
+            filename = 'final_' + str(inspect.stack()[0][3]) + '_model_BCI.sav'
+            pickle.dump(nb, open(filename, 'wb'))
 
         return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
 
@@ -232,7 +264,7 @@ class ClassificationAlgorithms:
     # model print_model_details=True) and use the created model to predict the outcome for both the
     # test and training set. It returns the categorical predictions for the training and test set as well as the
     # probabilities associated with each class, each class being represented as a column in the data frame.
-    def random_forest(self, train_X, train_y, test_X, n_estimators=10, min_samples_leaf=5, criterion='gini', print_model_details=False, gridsearch=True):
+    def random_forest(self, train_X, train_y, test_X, n_estimators=10, min_samples_leaf=5, criterion='gini', print_model_details=False, gridsearch=True, save_model=False):
 
         if gridsearch:
             tuned_parameters = [{'min_samples_leaf': [2, 10, 50, 100, 200],
@@ -261,10 +293,15 @@ class ClassificationAlgorithms:
 
         if print_model_details:
             ordered_indices = [i[0] for i in sorted(enumerate(rf.feature_importances_), key=lambda x:x[1], reverse=True)]
-            print('Feature importance random forest:')
-            for i in range(0, len(rf.feature_importances_)):
+            print('Top 20 feature importances random forest:')
+            for i in range(0, 20):
                 print(train_X.columns[ordered_indices[i]], end='')
                 print(' & ', end='')
                 print(rf.feature_importances_[ordered_indices[i]])
+        
+        if save_model:
+            # save the model to disk
+            filename = 'final_' + str(inspect.stack()[0][3]) + '_model_BCI.sav'
+            pickle.dump(rf, open(filename, 'wb'))
 
         return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y

@@ -91,7 +91,7 @@ def main():
 
     possible_feature_sets = [basic_features, basic_w_PCA, basic_w_ICA, all_features, selected_features]
     feature_names = ['initial set', 'basic_w_PCA', 'basic_w_ICA', 'all_features', 'Selected features']
-    N_KCV_REPEATS = 5 # some non deterministic models we will run a couple of times as their inits are random to get average results
+    N_KCV_REPEATS = 10 # some non deterministic models we will run a couple of times as their inits are random to get average results
 
 
     # then here, we run each model
@@ -100,9 +100,9 @@ def main():
     scores_over_all_algs = []
 
     for i in range(0, len(possible_feature_sets)):
-        #TODO: change all test stuff in val stuff
+
         selected_train_X = train_X[possible_feature_sets[i]]
-        selected_test_X = test_X[possible_feature_sets[i]]
+        selected_val_X = val_X[possible_feature_sets[i]]
 
         performance_training_nn = 0
         performance_training_rf = 0
@@ -114,27 +114,27 @@ def main():
         # first the non deterministic models for which we average over 5 runs
         for repeat in range(0, N_KCV_REPEATS):
             print("Training NeuralNetwork run {} / {} ... ".format(repeat+1, N_KCV_REPEATS, feature_names[i]))
-            class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.feedforward_neural_network(
-                selected_train_X, train_y, selected_test_X, gridsearch=False
+            class_train_y, class_val_y, class_train_prob_y, class_val_prob_y = learner.feedforward_neural_network(
+                selected_train_X, train_y, selected_val_X, gridsearch=False
             )
-            performance_training_nn += eval.accuracy(train_y, class_train_y)
-            performance_validation_nn += eval.accuracy(test_y, class_test_y)
+            performance_training_nn += eval.f1(train_y, class_train_y)
+            performance_validation_nn += eval.f1(val_y, class_val_y)
 
 
             print("Training RandomForest run {} / {} ... ".format(repeat+1, N_KCV_REPEATS, feature_names[i]))
-            class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.random_forest(
-                selected_train_X, train_y, selected_test_X, gridsearch=False
+            class_train_y, class_val_y, class_train_prob_y, class_val_prob_y = learner.random_forest(
+                selected_train_X, train_y, selected_val_X, gridsearch=False
             )
-            performance_training_rf += eval.accuracy(train_y, class_train_y)
-            performance_validation_rf += eval.accuracy(test_y, class_test_y)
+            performance_training_rf += eval.f1(train_y, class_train_y)
+            performance_validation_rf += eval.f1(val_y, class_val_y)
 
 
             print("Training SVM run {} / {}, featureset: {}... ".format(repeat+1, N_KCV_REPEATS, feature_names[i]))
-            class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.support_vector_machine_with_kernel(
-                selected_train_X, train_y, selected_test_X, gridsearch=False
+            class_train_y, class_val_y, class_train_prob_y, class_val_prob_y = learner.support_vector_machine_with_kernel(
+                selected_train_X, train_y, selected_val_X, gridsearch=False
             )
-            performance_training_svm += eval.accuracy(train_y, class_train_y)
-            performance_validation_svm += eval.accuracy(test_y, class_test_y)
+            performance_training_svm += eval.f1(train_y, class_train_y)
+            performance_validation_svm += eval.f1(val_y, class_val_y)
 
 
         overall_performance_training_nn = performance_training_nn/N_KCV_REPEATS
@@ -147,37 +147,37 @@ def main():
         # And we run our deterministic classifiers:
         print("Determenistic Classifiers:")
         print("Training Nearest Neighbor run 1 / 1, featureset {}:".format(feature_names[i]))
-        class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.k_nearest_neighbor(
-            selected_train_X, train_y, selected_test_X, gridsearch=False
+        class_train_y, class_val_y, class_train_prob_y, class_val_prob_y = learner.k_nearest_neighbor(
+            selected_train_X, train_y, selected_val_X, gridsearch=False
         )
-        performance_training_knn = eval.accuracy(train_y, class_train_y)
-        performance_validation_knn = eval.accuracy(test_y, class_test_y)
+        performance_training_knn = eval.f1(train_y, class_train_y)
+        performance_validation_knn = eval.f1(val_y, class_val_y)
 
 
         print("Training Descision Tree run 1 / 1  featureset {}:".format(feature_names[i]))
-        class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.decision_tree(
-            selected_train_X, train_y, selected_test_X, gridsearch=False
+        class_train_y, class_val_y, class_train_prob_y, class_val_prob_y = learner.decision_tree(
+            selected_train_X, train_y, selected_val_X, gridsearch=False
         )
-        performance_training_dt = eval.accuracy(train_y, class_train_y)
-        performance_validation_dt = eval.accuracy(test_y, class_test_y)
+        performance_training_dt = eval.f1(train_y, class_train_y)
+        performance_validation_dt = eval.f1(val_y, class_val_y)
 
 
         print("Training Naive Bayes run 1/1 featureset {}:".format(feature_names[i]))
-        class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.naive_bayes(
-            selected_train_X, train_y, selected_test_X
+        class_train_y, class_val_y, class_train_prob_y, class_val_prob_y = learner.naive_bayes(
+            selected_train_X, train_y, selected_val_X
         )
-        performance_training_nb = eval.accuracy(train_y, class_train_y)
-        performance_validation_nb = eval.accuracy(test_y, class_test_y)
+        performance_training_nb = eval.f1(train_y, class_train_y)
+        performance_validation_nb = eval.f1(val_y, class_val_y)
 
         print("Training LDA run 1/1 featureset {}:".format(feature_names[i]))
-        class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.LDA(
-            selected_train_X, train_y, selected_test_X
+        class_train_y, class_val_y, class_train_prob_y, class_val_prob_y = learner.LDA(
+            selected_train_X, train_y, selected_val_X
         )
-        performance_training_LDA = eval.accuracy(train_y, class_train_y)
-        performance_validation_LDA = eval.accuracy(test_y, class_test_y)
+        performance_training_LDA = eval.f1(train_y, class_train_y)
+        performance_validation_LDA = eval.f1(val_y, class_val_y)
+        print (performance_training_LDA)
 
-
-        scores_with_sd = util.print_table_row_performances(feature_names[i], len(selected_train_X.index), len(selected_test_X.index), [
+        scores_with_sd = util.print_table_row_performances(feature_names[i], len(selected_train_X.index), len(selected_val_X.index), [
                                                                                             (overall_performance_training_nn, overall_performance_validation_nn),
                                                                                             (overall_performance_training_rf, overall_performance_validation_rf),
                                                                                             (overall_performance_training_svm, overall_performance_validation_svm),
@@ -195,17 +195,14 @@ def main():
     # and then we chose the 1 or 2 best ones to apply gridsearch etc
     # from my initial results, RF with all features seems to perform best!
     # lets try it with the validation set and gridsearch = True.
-    #TODO
+    # eventually if we are happy with the best one, and we save that by setting save_model=True for later use with the real time predictions part!
+    
     class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.random_forest(
-                train_X, train_y, test_X, gridsearch=True
+                train_X, train_y, test_X, gridsearch=True, print_model_details=True, save_model=True
             )
-    performance_training_rf_final = eval.accuracy(train_y, class_train_y)
-    performance_test_rf_final = eval.accuracy(test_y, class_test_y)
-
-    print(performance_test_rf_final)
-
-    # eventually if we are happy with the best one, and we save that for later use with the real time predictions part!
-    #TODO
+    performance_training_rf_final = eval.f1(train_y, class_train_y)
+    performance_test_rf_final = eval.f1(test_y, class_test_y)
+    print(performance_test_rf_final) #test performance is very good!
 
 
 if __name__ == '__main__':
