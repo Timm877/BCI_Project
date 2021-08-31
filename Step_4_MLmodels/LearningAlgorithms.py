@@ -8,6 +8,7 @@ from sklearn import tree
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RepeatedStratifiedKFold
 import pandas as pd
 import numpy as np
 import os
@@ -55,7 +56,13 @@ class ClassificationAlgorithms:
 
     def LDA(self, train_X, train_y, test_X, gridsearch=True, print_model_details=False, save_model=False):
         # Create the model
-        lda = LinearDiscriminantAnalysis()
+        if gridsearch:
+            cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+            grid = dict()
+            grid['solver'] = ['svd', 'lsqr', 'eigen']
+            lda = GridSearchCV(LinearDiscriminantAnalysis(), grid, scoring='accuracy', cv=cv, n_jobs=-1)
+        else:
+            lda = LinearDiscriminantAnalysis()
 
         # Fit the model
         lda.fit(train_X, train_y.values.ravel())

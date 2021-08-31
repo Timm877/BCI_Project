@@ -55,11 +55,11 @@ def abs_handler(address: str,*args):
             print('we do some averaging jo')
             sumVals=0
             countVals=0            
-            for i in [0,1,2,3]:
+            for i in [0,1,2,3]: #for each sensor
                 if hsi[i]==1: #Only use good sensors
                     countVals+=1
                     sumVals+=args[i+1]
-            abs_waves[wave] = sumVals/countVals
+            abs_waves[wave] = sumVals/countVals #so only for a particular wave this is.
             
         rel_waves[wave] = math.pow(10,abs_waves[wave]) / (math.pow(10,abs_waves[0]) + math.pow(10,abs_waves[1]) + math.pow(10,abs_waves[2]) + math.pow(10,abs_waves[3]) + math.pow(10,abs_waves[4]))
         update_plot_vars(wave)

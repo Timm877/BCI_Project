@@ -28,10 +28,10 @@ class PrepareDatasetForLearning:
         dataset['class'] = self.default_label
         for i in range(0, len(dataset.index)):
             # If we have exactly one true class column, we can assign that value,
-            # otherwise we keep the default class.
-
+            # otherwise we keep the default class ('none').
             if sum_values[i] == 1:
                 dataset.iloc[i, dataset.columns.get_loc(self.class_col)] = dataset[labels].iloc[i].idxmax(axis=0)
+
 
         # And remove our old binary columns.
         dataset = dataset.drop(labels, axis=1)
@@ -136,11 +136,6 @@ class PrepareDatasetForLearning:
             for i in range(0, len(datasets)):
                 training_set_X_person, val_set_X_person, test_set_X_person, training_set_y_person, val_set_y_person, test_set_y_person = self.split_single_dataset_classification(
                     datasets[i], class_labels, matching,split_fracs, filter=filter, temporal=temporal, random_state=random_state)
-               
-                # We add a person column.
-                training_set_X_person[self.person_col] = i
-                val_set_X_person[self.person_col] = i
-                test_set_X_person[self.person_col] = i
 
                 training_set_X = self.update_set(training_set_X, training_set_X_person)
                 training_set_y = self.update_set(training_set_y, training_set_y_person)

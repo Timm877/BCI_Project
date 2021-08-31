@@ -42,9 +42,9 @@ def main():
     Then later we add all train data together, all val data together, and all test data together.
     This way we sample randomly across all users to get a result for the whole 'population' of subjects.
     '''
-
+    # we set filter is false so also the data besides left and right are taken with us
     train_X, val_X, test_X, train_y, val_y, test_y = prepare.split_multiple_datasets_classification(
-        all_datasets, ['label_left', 'label_right'], 'like', [0.2, 0.25],filter=True, temporal=False)
+        all_datasets, ['label_left', 'label_right'], 'like', [0.2, 0.25],filter=False, temporal=False)
     print('Training set length is: ', len(train_X.index))
     print('Validation set length is: ', len(val_X.index))
     print('Test set length is: ', len(test_X.index))   
@@ -98,7 +98,7 @@ def main():
     learner = ClassificationAlgorithms()
     eval = ClassificationEvaluation()
     scores_over_all_algs = []
-
+    '''
     for i in range(0, len(possible_feature_sets)):
 
         selected_train_X = train_X[possible_feature_sets[i]]
@@ -190,19 +190,22 @@ def main():
 
     DataViz.plot_performances_classification(['NN', 'RF','SVM', 'KNN', 'DT', 'NB', 'LDA'], feature_names, scores_over_all_algs)
     # we plot validation results together with their std
-
+    '''
 
     # and then we chose the 1 or 2 best ones to apply gridsearch etc
     # from my initial results, RF with all features seems to perform best!
     # lets try it with the validation set and gridsearch = True.
     # eventually if we are happy with the best one, and we save that by setting save_model=True for later use with the real time predictions part!
-    
+    #print(test_y)
+    #print(train_X)
     class_train_y, class_test_y, class_train_prob_y, class_test_prob_y = learner.random_forest(
                 train_X, train_y, test_X, gridsearch=True, print_model_details=True, save_model=True
             )
     performance_training_rf_final = eval.f1(train_y, class_train_y)
     performance_test_rf_final = eval.f1(test_y, class_test_y)
-    print(performance_test_rf_final) #test performance is very good!
+    confusionmatrix_rf_final = eval.confusion_matrix(test_y, class_test_y, ['label_left', 'label_right', 'undefined'])
+    print(performance_test_rf_final) #test performance is reasonable!
+    print(confusionmatrix_rf_final)
 
 
 if __name__ == '__main__':
