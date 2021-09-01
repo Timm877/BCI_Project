@@ -28,7 +28,15 @@ import pickle
 #ALL GLOBAL VARIABLES:
 hsi = [4,4,4,4]
 hsi_string = ""
-Vals = defaultdict(list) #Note: The names of the cols from muse device do not align with names in earlier files (Fp1 instead of AF7)
+
+#Note: The names of the cols from muse device do not align with names in earlier files (Fp1 instead of AF7 and Fp2 instead of AF8)
+#Note2: Very important that this list is in the same order as for the earlier datasets as sklearn ML models do not change order!!
+cols = ['Delta_TP9','Delta_Fp1','Delta_Fp2','Delta_TP10',
+    'Theta_TP9','Theta_Fp1','Theta_Fp2','Theta_TP10',
+    'Alpha_TP9','Alpha_Fp1','Alpha_Fp2','Alpha_TP10',
+    'Beta_TP9','Beta_Fp1','Beta_Fp2','Beta_TP10',
+    'Gamma_TP9','Gamma_Fp1','Gamma_Fp2','Gamma_TP10']
+Vals = defaultdict(list, { k:[] for k in cols})
 
 #call class instances:
 OutlierDistr = DistributionBasedOutlierDetection()
@@ -62,7 +70,7 @@ def hsi_handler(address: str,*args):
         print(hsi_string)  
 
 def wave_handler(address: str,*args):
-    global Vals, datapoints, rf_model
+    global Vals, datapoints, rf_model, cols
     wave = args[0][0]
 
 	# channel configuration = [TP9, Fp1, Fp2, TP10] as per 
@@ -80,6 +88,7 @@ def wave_handler(address: str,*args):
         # we add datetime to the df as this makes it compatible with our earlier code
         df= pd.DataFrame.from_dict(Vals,orient='index').transpose()
         df.index = pd.date_range("20180101", periods=df.shape[0], freq='100ms')
+
         # step 2: outlier detection
         for col in [c for c in df.columns]: 
             df = OutlierDistr.mixture_model(df, col, 3)              
@@ -88,10 +97,7 @@ def wave_handler(address: str,*args):
             df[col] = df[col].interpolate() 
             df[col] = df[col].fillna(method='bfill')
 
-        # pre process
-
-        cols = df.columns
-
+        # step 3: pre-process
         n_pcs = 4
         df = PCA.apply_pca(copy.deepcopy(df), cols, n_pcs)
         df = ICA.apply_ica(copy.deepcopy(df), cols) 
@@ -106,19 +112,21 @@ def wave_handler(address: str,*args):
 
         # now we have exactly 1 row which has no NaN, so choose that row
         df.dropna(axis=0, inplace=True)
-        #print(df.shape)
+
         input = df.to_numpy()
-        # predict
+
+        # step 4: predict
         pred = rf_model.predict(input)
         proba = rf_model.predict_proba(input)
         print(pred)
         print(proba)
-        # update game     
+
+        # step 5: update graph     
         plot_update(pred)
 
-        #now, we reinit datapoints and the Vals dict
+        #step 6: now, we reinit datapoints and the Vals dict and start again
         datapoints = 0
-        Vals = defaultdict(list)
+        Vals = defaultdict(list, { k:[] for k in cols})
 
 
 def init_plot():
